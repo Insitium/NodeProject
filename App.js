@@ -1,72 +1,66 @@
 
-//#region Setting up server
+// Setting up server
 var express = require("express");
-var app = express();
-var http_port = process.env.PORT || 8080
-
-require("dotenv").config();
-
-
-
-//using a body parser
 var parserBody = require('body-parser');
+var http_port = process.env.PORT || 8080
+require("dotenv").config();
+const mongodb = require("mongoose")
+
+var app = express();
+
+
+// set body parser
 app.use(parserBody.urlencoded({extended:false}));
-function onStartingServer(){
-    console.log("The server is listenibng on the port: "+http_port);
-}
+app.use(parserBody.json())
 app.use(express.static("views"));
 app.use(express.static("public"))
 
+// start server helper method
+function onStartingServer(){
+    console.log("The server is listenibng on the port: "+http_port);
+}
+
+// number validation
+function containsOnlyNumbers(str) {
+    return /^\d+$/.test(str);
+}
 
 
-//mongodb database connections
-const mongodb = require("mongoose")
 
 //data models
 const patientModel = require("./models/PatientModel.js")
-const { findById } = require("./models/PatientModel.js");
 const { on } = require("events");
 
 //connecting to the db using the link in env file
 mongodb.connect(process.env.DBCONN, { useNewUrlParser: true, useUnifiedTopology: true})
 
-//Xbf0OWQpeq6wkuFR
-//#endregion
-
-function containsOnlyNumbers(str) {
-    return /^\d+$/.test(str);
-}
-
-app.post("/patients",(req,res) =>{
-    console.log({
+// post patient data method
+app.post("/patient",(req,res) =>{
+    var newPatient = new patientModel({
         fullName: req.body.fullName,
         age: req.body.age,
         address: req.body.address,
         dob: req.body.dob,
         phoneNumber: req.body.phoneNumber
-    })
-
+    });
     if(req.body.fullName == "" || req.body.fullName == undefined){
         res.send({
             "success" : "false",
             "message" : "fullName is required"
         })
     }
-
     if(!containsOnlyNumbers(req.body.age) || req.body.age == undefined){
         return res.send({
             "sucess": "false",
             "message": "invalid age or age not given"
         })
     }
-
     if(req.body.address=="" || req.body.address == undefined){
         return res.send({
             "success" : "false",
             "message" : "address is required"
         })
     }
-
     if(req.body.dob=="" || req.body.dob == undefined){
         return res.send({
             "success" : "false",
@@ -88,14 +82,6 @@ app.post("/patients",(req,res) =>{
         }    
     }
 
-    var newPatient = new patientModel({
-        fullName: req.body.fullName,
-        age: req.body.age,
-        address: req.body.address,
-        dob: req.body.dob,
-        phoneNumber: req.body.phoneNumber
-    });
-
     try{
         newPatient.save();
         return res.send({
@@ -111,6 +97,39 @@ app.post("/patients",(req,res) =>{
     
 })
 
+// find patient by id
+app.get('/patient/:postId', async (req, res) => {
+    try {
+        const data = await patientModel.findById(req.params.postId);
+        res.send({ data});
+    } catch (err) {
+        res.send({message: err });
+   
+    }
+});
+
+// delete patient by id
+app.delete("/patient/:id", async (req, res) => { 
+    try {
+        const data = await patientModel.remove({ _id: req.params.id});
+        res.send({ data});
+    } catch (err) {
+        res.send({message: err });
+   
+    }
+})
+
+// get all patients
+app.get('/getPatients', (req, res) => {
+    let posts = patientModel.find({}, function(err, posts){
+        if(err){
+            console.log(err);
+        }
+        else {
+            res.send({posts});
+        }
+    });
+});
 
 //app listen
 app.listen(http_port,onStartingServer)
