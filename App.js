@@ -25,24 +25,108 @@ function containsOnlyNumbers(str) {
     return /^\d+$/.test(str);
 }
 
+const sessionsClient = require("client-sessions")
 
+app.use(
+    sessionsClient({
+        cookieName: "session",
+        secret: "NodeProject",
+        duration: 100*60*1000,
+        activeDuration: 1000*60*10
+    })
+);
 
 //data models
 const patientModel = require("./models/PatientModel.js")
+const loginRegisterModel = require("./models/LoginRegisterModel")
 const { on } = require("events");
+const { ppid } = require("process");
 
 //connecting to the db using the link in env file
 mongodb.connect(process.env.DBCONN, { useNewUrlParser: true, useUnifiedTopology: true})
 
+// working on register and login using methods
+
+app.post("/register",(req,res)=>{
+    const password = req.body.password
+    
+    var loginregisterUser = new loginRegisterModel({
+        username: req.body.username,
+        nurseName: req.body.nurseName,
+        nurseNumber: req.body.nurseNumber,
+        password: req.body.password
+    });
+    if(req.body.username === "" ||req.body.nurseName === "" || req.body.nurseNumber === "" || req.body.password==="" || req.body.username ===undefined || req.body.nurseName === undefined || req.body.nurseNumber === undefined || req.body.password === undefined){
+        res.send({
+            "success": "false",
+            "message": "every field needs to be filled"
+        })
+    }
+    try{
+        loginregisterUser.save();
+        return res.send({
+            "success": "true"
+        })
+    }catch(err){
+        console.log(err)
+        return res.send({
+            "success": "false",
+            "message": err
+        })
+    }
+    
+});
+
+//login backend where it will validate the register details and then login
+app.post("/login",(req,res)=>{
+    const username= req.body.username;
+    const password = req.body.password;
+
+    //validating the availability of both the fields
+    if(username === "" || username === undefined || password === "" || password=== undefined){
+        res.render("/login",{
+            errorMsg:"fields can not be empty",
+            layout: false,
+        })
+    }
+    loginRegisterModel.findOne({ username:username}).exec().then((user)=>{
+        if(!user){
+            //if user is not in gthe registration db
+            res.render("login",{
+                errorMsg:"UserName does not exist with this name",
+                layout: false,
+            });
+        }else{
+            //if username exists
+            if(password === user.password){
+                //is password matches
+                res.redirect("getPatients");
+            }else{
+                res.render("/login",{
+                    errorMsg:"password does not match",
+                    layout: false,
+                })
+            }
+        }
+    })
+})
+
 // post patient data method
-app.post("/patient",(req,res) =>{
+app.post("/patient",loginEnsuring,(req,res) =>{
     var newPatient = new patientModel({
+        patient_id: req.body.patient_id,
         fullName: req.body.fullName,
         age: req.body.age,
         address: req.body.address,
         dob: req.body.dob,
         phoneNumber: req.body.phoneNumber
     });
+    if(req.body.patient_id == "" || req.body.patient_id == undefined){
+        res.send({
+            "success": "false",
+            "message": "PatientID is required"
+        })
+    }
     if(req.body.fullName == "" || req.body.fullName == undefined){
         res.send({
             "success" : "false",
@@ -95,10 +179,10 @@ app.post("/patient",(req,res) =>{
         })
     }
     
-})
+});
 
 // find patient by id
-app.get('/patient/:postId', async (req, res) => {
+app.get('/patient/:postId',loginEnsuring, async (req, res) => {
     try {
         const data = await patientModel.findById(req.params.postId);
         res.send({ data});
@@ -109,7 +193,7 @@ app.get('/patient/:postId', async (req, res) => {
 });
 
 // delete patient by id
-app.delete("/patient/:id", async (req, res) => { 
+app.delete("/patient/:id",loginEnsuring, async (req, res) => { 
     try {
         const data = await patientModel.remove({ _id: req.params.id});
         res.send({ data});
@@ -120,7 +204,7 @@ app.delete("/patient/:id", async (req, res) => {
 })
 
 // get all patients
-app.get('/getPatients', (req, res) => {
+app.get('/getPatients',loginEnsuring, (req, res) => {
     let posts = patientModel.find({}, function(err, posts){
         if(err){
             console.log(err);
@@ -130,6 +214,14 @@ app.get('/getPatients', (req, res) => {
         }
     });
 });
+//ensuring that other pages are accessed only after login
+function loginEnsuring(req,res,next){
+    if(!req.session.user){
+        res.redirect("/login")
+    }else{
+        next();
+    }
+}
 
 //app listen
 app.listen(http_port,onStartingServer)
