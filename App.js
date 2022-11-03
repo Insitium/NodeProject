@@ -32,7 +32,7 @@ app.use(
         cookieName: "session",
         secret: "NodeProject",
         duration: 100*60*1000,
-        activeDuration: 1000*60*10
+        activeDuration: 1000*60*60
     })
 );
 
