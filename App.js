@@ -89,42 +89,46 @@ app.post("/login",(req,res)=>{
             layout: false,
         })
     }
-    LoginRegisterModel.findOne({ username:username })
-    .exec()
-    .then((usr)=>{
-        if(!usr){
-            //if user is not in gthe registration db
-            res.render("login",{
-                errorMsg:"UserName does not exist with this name",
-                layout: false,
-            });
-        }else{
-            //if username exists
-            if(password === usr.password){
-                //saving the details in sessions
-                req.body.user = {
-                    username: usr.username,
-                    nurseName:usr.nurseName,
-                    nurseNumber:usr.nurseNumber,
-                    password:usr.password
-                };
-                //is password matches
-                res.redirect("/getPatients");
-            }else{
+
+    LoginRegisterModel.findOne({ username:username }, function(err, usr) {
+        if (err) {
+          res.send(err);
+        } else {
+            if(!usr){
+                //if user is not in gthe registration db
                 res.render("login",{
-                    errorMsg:"password does not match",
+                    errorMsg:"UserName does not exist with this name",
                     layout: false,
-                })
+                });
+            }else{
+                //if username exists
+                if(password === usr.password){
+                    //saving the details in sessions
+                    req.body.user = {
+                        username: usr.username,
+                        nurseName:usr.nurseName,
+                        nurseNumber:usr.nurseNumber,
+                        password:usr.password
+                    };
+                    //is password matches
+                    res.redirect("/getPatients");
+                }else{
+                    res.render("login",{
+                        errorMsg:"password does not match",
+                        layout: false,
+                    })
+                }
             }
         }
-    });
+      });
 });
+
 app.get("/login",(req,res)=>{
     res.render("login",{layout:false});
 });
 
 // post patient data method
-app.post("/patient",loginEnsuring,(req,res) =>{
+app.post("/patient",(req,res) =>{
     var newPatient = new patientModel({
         patient_id: req.body.patient_id,
         fullName: req.body.fullName,
@@ -194,7 +198,7 @@ app.post("/patient",loginEnsuring,(req,res) =>{
 });
 
 // find patient by id
-app.get('/patient/:postId',loginEnsuring, async (req, res) => {
+app.get('/patient/:postId', async (req, res) => {
     try {
         const data = await patientModel.findById(req.params.postId);
         res.send({ data});
@@ -205,7 +209,7 @@ app.get('/patient/:postId',loginEnsuring, async (req, res) => {
 });
 
 // delete patient by id
-app.delete("/patient/:id",loginEnsuring, async (req, res) => { 
+app.delete("/patient/:id", async (req, res) => { 
     try {
         const data = await patientModel.remove({ _id: req.params.id});
         res.send({ data});
@@ -216,16 +220,17 @@ app.delete("/patient/:id",loginEnsuring, async (req, res) => {
 })
 
 // get all patients
-app.get('/getPatients',loginEnsuring, (req, res) => {
-    let posts = patientModel.find({}, function(err, posts){
-        if(err){
-            console.log(err);
-        }
-        else {
-            res.send({posts});
-        }
-    });
+app.get('/patients', async (req, res) => {
+    try {
+        const data = await patientModel.find();
+        res.send({ data});
+    } catch (err) {
+        res.send({message: err });
+   
+    }
 });
+
+
 //ensuring that other pages are accessed only after login
 function loginEnsuring(req,res,next){
     if(!req.body.user){
