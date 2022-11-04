@@ -16,3 +16,4 @@ const nurseSchema = new Schema({
     },
     "password": String
 })
+module.exports = mongoose.model("nurse",nurseSchema)

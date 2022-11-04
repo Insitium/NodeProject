@@ -38,9 +38,9 @@ app.use(
 
 //data models
 const patientModel = require("./models/PatientModel.js")
-const loginRegisterModel = require("./models/LoginRegisterModel")
+const LoginRegisterModel = require("./models/LoginRegisterModel.js")
 const { on } = require("events");
-const { ppid } = require("process");
+const { ppid } = require("process");``
 
 //connecting to the db using the link in env file
 mongodb.connect(process.env.DBCONN, { useNewUrlParser: true, useUnifiedTopology: true})
@@ -50,7 +50,7 @@ mongodb.connect(process.env.DBCONN, { useNewUrlParser: true, useUnifiedTopology:
 app.post("/register",(req,res)=>{
     const password = req.body.password
     
-    var loginregisterUser = new loginRegisterModel({
+    var loginregisterUser = new LoginRegisterModel({
         username: req.body.username,
         nurseName: req.body.nurseName,
         nurseNumber: req.body.nurseNumber,
@@ -84,13 +84,15 @@ app.post("/login",(req,res)=>{
 
     //validating the availability of both the fields
     if(username === "" || username === undefined || password === "" || password=== undefined){
-        res.render("/login",{
+        return res.render("login",{
             errorMsg:"fields can not be empty",
             layout: false,
         })
     }
-    loginRegisterModel.findOne({ username:username}).exec().then((user)=>{
-        if(!user){
+    LoginRegisterModel.findOne({ username:username })
+    .exec()
+    .then((usr)=>{
+        if(!usr){
             //if user is not in gthe registration db
             res.render("login",{
                 errorMsg:"UserName does not exist with this name",
@@ -98,18 +100,28 @@ app.post("/login",(req,res)=>{
             });
         }else{
             //if username exists
-            if(password === user.password){
+            if(password === usr.password){
+                //saving the details in sessions
+                req.body.user = {
+                    username: usr.username,
+                    nurseName:usr.nurseName,
+                    nurseNumber:usr.nurseNumber,
+                    password:usr.password
+                };
                 //is password matches
-                res.redirect("getPatients");
+                res.redirect("/getPatients");
             }else{
-                res.render("/login",{
+                res.render("login",{
                     errorMsg:"password does not match",
                     layout: false,
                 })
             }
         }
-    })
-})
+    });
+});
+app.get("/login",(req,res)=>{
+    res.render("login",{layout:false});
+});
 
 // post patient data method
 app.post("/patient",loginEnsuring,(req,res) =>{
@@ -216,7 +228,7 @@ app.get('/getPatients',loginEnsuring, (req, res) => {
 });
 //ensuring that other pages are accessed only after login
 function loginEnsuring(req,res,next){
-    if(!req.session.user){
+    if(!req.body.user){
         res.redirect("/login")
     }else{
         next();
