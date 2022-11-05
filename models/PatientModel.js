@@ -8,7 +8,8 @@ const PatientSchema = new mongoose.Schema({
     age: { type: String, required: true },
     address: { type: String, required: true },
     dob: { type: String, required: true },
-    phoneNumber: { type: String, required: true }
+    phoneNumber: { type: String, required: true },
+    image: {type: String}
 })
 
 module.exports = mongoose.model("patient",PatientSchema)

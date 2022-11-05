@@ -5,6 +5,7 @@ var parserBody = require('body-parser');
 var http_port = process.env.PORT || 8080
 require("dotenv").config();
 const mongodb = require("mongoose")
+const cors = require('cors');
 
 var app = express();
 
@@ -14,6 +15,7 @@ app.use(parserBody.urlencoded({extended:false}));
 app.use(parserBody.json())
 app.use(express.static("views"));
 app.use(express.static("public"))
+app.use(cors({origin: true, credentials: true}));
 
 // start server helper method
 function onStartingServer(){
@@ -25,187 +27,28 @@ function containsOnlyNumbers(str) {
     return /^\d+$/.test(str);
 }
 
-const sessionsClient = require("client-sessions")
 
-app.use(
-    sessionsClient({
-        cookieName: "session",
-        secret: "NodeProject",
-        duration: 100*60*1000,
-        activeDuration: 1000*60*60
-    })
-);
 
 //data models
 const patientModel = require("./models/PatientModel.js")
-const LoginRegisterModel = require("./models/LoginRegisterModel.js")
-const RecordModel = require("./models/RecordModel.js")
-
 const { on } = require("events");
-const { ppid } = require("process");``
 
 //connecting to the db using the link in env file
 mongodb.connect(process.env.DBCONN, { useNewUrlParser: true, useUnifiedTopology: true})
 
-// working on register and login using methods
-
-app.post("/register",(req,res)=>{
-    const password = req.body.password
-    
-    var loginregisterUser = new LoginRegisterModel({
-        username: req.body.username,
-        nurseName: req.body.nurseName,
-        nurseNumber: req.body.nurseNumber,
-        password: req.body.password
-    });
-    if(req.body.username === "" ||req.body.nurseName === "" || req.body.nurseNumber === "" || req.body.password==="" || req.body.username ===undefined || req.body.nurseName === undefined || req.body.nurseNumber === undefined || req.body.password === undefined){
-        res.send({
-            "success": "false",
-            "message": "every field needs to be filled"
-        })
-    }
-    try{
-        loginregisterUser.save();
-        return res.send({
-            "success": "true"
-        })
-    }catch(err){
-        console.log(err)
-        return res.send({
-            "success": "false",
-            "message": err
-        })
-    }
-    
-});
-
-//login backend where it will validate the register details and then login
-app.post("/login",(req,res)=>{
-    const username= req.body.username;
-    const password = req.body.password;
-
-    //validating the availability of both the fields
-    if(username === "" || username === undefined || password === "" || password=== undefined){
-        return res.render("login",{
-            errorMsg:"fields can not be empty",
-            layout: false,
-        })
-    }
-
-    LoginRegisterModel.findOne({ username:username }, function(err, usr) {
-        if (err) {
-          res.send(err);
-        } else {
-            if(!usr){
-                //if user is not in gthe registration db
-                res.render("login",{
-                    errorMsg:"UserName does not exist with this name",
-                    layout: false,
-                });
-            }else{
-                //if username exists
-                if(password === usr.password){
-                    //saving the details in sessions
-                    req.body.user = {
-                        username: usr.username,
-                        nurseName:usr.nurseName,
-                        nurseNumber:usr.nurseNumber,
-                        password:usr.password
-                    };
-                    //is password matches
-                    res.redirect("/getPatients");
-                }else{
-                    res.render("login",{
-                        errorMsg:"password does not match",
-                        layout: false,
-                    })
-                }
-            }
-        }
-      });
-});
-
-app.get("/login",(req,res)=>{
-    res.render("login",{layout:false});
-});
-//post record data method
-app.post("/records",(req,res)=>{
-    var newRecord = new RecordModel({
-        fullName: req.body.fullName,
-        time:req.body.time,
-        bloodPressure: req.body.bloodPressure,
-        respirationRate: req.body.respirationRate,
-        bloodOxygen: req.body.bloodOxygen,
-        
-    });
-    if(req.body.fullName == "" || req.body.fullName == undefined || req.body.time =="" || req.body.time == undefined || req.body.bloodPressure == "" || req.body.bloodPressure == undefined || req.body.respirationRate == "" || req.body.respirationRate == undefined || req.body.bloodOxygen == "" || req.body.bloodOxygen == undefined){
-        res.send({
-            "success": "false",
-            "message": "All the details needs to be filled"
-        })
-    }
-    try{
-        newRecord.save();
-        return res.send({
-            "success": "true"
-        })
-    }catch(err){
-        console.log(err)
-        return res.send({
-            "success": "false",
-            "message": err
-        })
-    }
-})
-//get all records
-app.get('/records', async (req, res) => {
-    try {
-        const data = await RecordModel.find();
-        res.send({ data});
-    } catch (err) {
-        res.send({message: err });
-   
-    }
-});
-//get records by id
-app.get('/record/:postId', async (req, res) => {
-    try {
-        const data = await RecordModel.findById(req.params.postId);
-        res.send({ data});
-    } catch (err) {
-        res.send({message: err });
-   
-    }
-});
-
-// delete record by id
-app.delete("/record/:id", async (req, res) => { 
-    try {
-        const data = await RecordModel.remove({ _id: req.params.id});
-        res.send({ data});
-    } catch (err) {
-        res.send({message: err });
-   
-    }
-})
-
-
 // post patient data method
 app.post("/patient",(req,res) =>{
+
+    console.log('/patient METHOD:POST')
     var newPatient = new patientModel({
-        patient_id: req.body.patient_id,
+        patient_id: req.body.patientId,
         fullName: req.body.fullName,
         age: req.body.age,
         address: req.body.address,
         dob: req.body.dob,
-        phoneNumber: req.body.phoneNumber
+        phoneNumber: req.body.phoneNumber,
+        image: req.body.image
     });
-    if(req.body.patient_id == "" || req.body.patient_id == undefined){
-        res.send({
-            "success": "false",
-            "message": "PatientID is required"
-        })
-    }
     if(req.body.fullName == "" || req.body.fullName == undefined){
         res.send({
             "success" : "false",
@@ -214,7 +57,7 @@ app.post("/patient",(req,res) =>{
     }
     if(!containsOnlyNumbers(req.body.age) || req.body.age == undefined){
         return res.send({
-            "sucess": "false",
+            "success": "false",
             "message": "invalid age or age not given"
         })
     }
@@ -258,7 +101,7 @@ app.post("/patient",(req,res) =>{
         })
     }
     
-});
+})
 
 // find patient by id
 app.get('/patient/:postId', async (req, res) => {
@@ -283,25 +126,16 @@ app.delete("/patient/:id", async (req, res) => {
 })
 
 // get all patients
-app.get('/patients', async (req, res) => {
-    try {
-        const data = await patientModel.find();
-        res.send({ data});
-    } catch (err) {
-        res.send({message: err });
-   
-    }
+app.get('/getPatients', (req, res) => {
+    let posts = patientModel.find({}, function(err, posts){
+        if(err){
+            console.log(err);
+        }
+        else {
+            res.send({posts});
+        }
+    });
 });
-
-
-//ensuring that other pages are accessed only after login
-function loginEnsuring(req,res,next){
-    if(!req.body.user){
-        res.redirect("/login")
-    }else{
-        next();
-    }
-}
 
 //app listen
 app.listen(http_port,onStartingServer)
