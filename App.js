@@ -39,6 +39,8 @@ app.use(
 //data models
 const patientModel = require("./models/PatientModel.js")
 const LoginRegisterModel = require("./models/LoginRegisterModel.js")
+const RecordModel = require("./models/RecordModel.js")
+
 const { on } = require("events");
 const { ppid } = require("process");``
 
@@ -126,6 +128,67 @@ app.post("/login",(req,res)=>{
 app.get("/login",(req,res)=>{
     res.render("login",{layout:false});
 });
+//post record data method
+app.post("/records",(req,res)=>{
+    var newRecord = new RecordModel({
+        fullName: req.body.fullName,
+        time:req.body.time,
+        bloodPressure: req.body.bloodPressure,
+        respirationRate: req.body.respirationRate,
+        bloodOxygen: req.body.bloodOxygen,
+        
+    });
+    if(req.body.fullName == "" || req.body.fullName == undefined || req.body.time =="" || req.body.time == undefined || req.body.bloodPressure == "" || req.body.bloodPressure == undefined || req.body.respirationRate == "" || req.body.respirationRate == undefined || req.body.bloodOxygen == "" || req.body.bloodOxygen == undefined){
+        res.send({
+            "success": "false",
+            "message": "All the details needs to be filled"
+        })
+    }
+    try{
+        newRecord.save();
+        return res.send({
+            "success": "true"
+        })
+    }catch(err){
+        console.log(err)
+        return res.send({
+            "success": "false",
+            "message": err
+        })
+    }
+})
+//get all records
+app.get('/records', async (req, res) => {
+    try {
+        const data = await RecordModel.find();
+        res.send({ data});
+    } catch (err) {
+        res.send({message: err });
+   
+    }
+});
+//get records by id
+app.get('/record/:postId', async (req, res) => {
+    try {
+        const data = await RecordModel.findById(req.params.postId);
+        res.send({ data});
+    } catch (err) {
+        res.send({message: err });
+   
+    }
+});
+
+// delete record by id
+app.delete("/record/:id", async (req, res) => { 
+    try {
+        const data = await RecordModel.remove({ _id: req.params.id});
+        res.send({ data});
+    } catch (err) {
+        res.send({message: err });
+   
+    }
+})
+
 
 // post patient data method
 app.post("/patient",(req,res) =>{
