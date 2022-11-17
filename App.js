@@ -127,7 +127,7 @@ app.delete("/patient/:id", async (req, res) => {
 })
 
 // get all patients
-app.get('/getPatients', (req, res) => {
+app.get('/patients', (req, res) => {
     let posts = patientModel.find({}, function(err, posts){
         if(err){
             console.log(err);
