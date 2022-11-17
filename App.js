@@ -139,7 +139,7 @@ app.get('/patients', (req, res) => {
 });
 
 //post record data method
-app.post("/records",(req,res)=>{
+app.post("/record",(req,res)=>{
     var newRecord = new RecordModel({
         fullName: req.body.fullName,
         time:req.body.time,
