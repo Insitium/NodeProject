@@ -126,6 +126,17 @@ app.delete("/patient/:id", async (req, res) => {
     }
 })
 
+app.get("/patient/record/:patientId", async (req, res) => {
+    console.log('/patient/record METHOD:GET')
+    try{
+        const data = await RecordModel.find({patient_id: req.params.patientId})
+        res.send({data});
+    } catch (err){
+        console.log(err)
+        res.send({message: err})
+    }
+})
+
 // get all patients
 app.get('/patients', (req, res) => {
     let posts = patientModel.find({}, function(err, posts){
@@ -140,16 +151,19 @@ app.get('/patients', (req, res) => {
 
 //post record data method
 app.post("/record",(req,res)=>{
+
+    console.log('/record METHOD:POST')
+    let date = new Date() 
     var newRecord = new RecordModel({
-        fullName: req.body.fullName,
-        time:req.body.time,
+        patient_id: req.body.patientId,
+        time: date,
         bloodPressure: req.body.bloodPressure,
         respirationRate: req.body.respirationRate,
         bloodOxygen: req.body.bloodOxygen,
         heartBeat: req.body.heartBeat
-        
     });
-    if(req.body.fullName == "" || req.body.fullName == undefined || req.body.time =="" || req.body.time == undefined || req.body.bloodPressure == "" || req.body.bloodPressure == undefined || req.body.respirationRate == "" || req.body.respirationRate == undefined || req.body.bloodOxygen == "" || req.body.bloodOxygen == undefined){
+
+    if(req.body.patientId == "" || req.body.patientId == undefined || req.body.bloodPressure == "" || req.body.bloodPressure == undefined || req.body.respirationRate == "" || req.body.respirationRate == undefined || req.body.bloodOxygen == "" || req.body.bloodOxygen == undefined){
         res.send({
             "success": "false",
             "message": "All the details needs to be filled"
@@ -168,6 +182,7 @@ app.post("/record",(req,res)=>{
         })
     }
 })
+
 //get all records
 app.get('/records', async (req, res) => {
     try {
@@ -178,8 +193,10 @@ app.get('/records', async (req, res) => {
    
     }
 });
+
 //get records by id
 app.get('/record/:postId', async (req, res) => {
+    console.log('/record METHOD:GET')
     try {
         const data = await RecordModel.findById(req.params.postId);
         res.send({ data});
