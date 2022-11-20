@@ -32,10 +32,60 @@ function containsOnlyNumbers(str) {
 //data models
 const patientModel = require("./models/PatientModel.js")
 const RecordModel = require("./models/RecordModel.js")
+const LoginregisterModel = require("./models/LoginRegisterModel")
 const { on } = require("events");
 
 //connecting to the db using the link in env file
 mongodb.connect(process.env.DBCONN, { useNewUrlParser: true, useUnifiedTopology: true})
+
+//register post request
+app.post("/signup",(req,res)=>{
+    console.log('/signup METGOD: POST')
+    var newSignup = new LoginregisterModel({
+        username: req.body.username,
+        nurseName: req.body.nurseName,
+        nurseNumber: req.body.nurseNumber,
+        password: req.body.password
+    })
+    if(req.body.username == "" || req.body.username == undefined){
+        res.send({
+            "success" : "false",
+            "message" : "username is required"
+        })
+    }
+    if(req.body.nurseName == "" || req.body.nurseName == undefined){
+        res.send({
+            "success" : "false",
+            "message" : "nurse Name is required"
+        })
+    }
+    if(req.body.nurseNumber == "" || req.body.nurseNumber == undefined || !containsOnlyNumbers(req.body.nurseNumber)){
+        res.send({
+            "success" : "false",
+            "message" : "nurse Number is required"
+        })
+    }
+    
+    if(req.body.password == "" || req.body.password == undefined){
+        res.send({
+            "success" : "false",
+            "message" : "password is required"
+        })
+    }
+    try{
+        newSignup.save();
+        return res.send({
+            "success": "true"
+        })
+    }catch(err){
+        console.log(err)
+        return res.send({
+            "success": "false",
+            "message": err
+        })
+    }
+    
+})
 
 // post patient data method
 app.post("/patient",(req,res) =>{

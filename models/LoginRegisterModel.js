@@ -4,16 +4,26 @@ const mongoose = require("mongoose")
 const Schema = mongoose.Schema;
 
 //register and login model
-const nurseSchema = new Schema({
-    "username":{
+const LoginRegisterSchema = new Schema({
+    username:{
         type: String,
-        unique: true
+        unique: true,
+        required: true
     },
-    "nurseName":String,
-    "nurseNumber":{
+    nurseName:{
         type: String,
-        unique: true
+        required: true
     },
-    "password": String
+    nurseNumber:{
+        type: String,
+        unique: true,
+        required: true
+    },
+    password:{
+        type: String,
+        required: true
+    }
 })
-module.exports = mongoose.model("nurse",nurseSchema)
+module.exports = mongoose.model("nurse",LoginRegisterSchema)
+
+
