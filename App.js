@@ -126,6 +126,7 @@ app.delete("/patient/:id", async (req, res) => {
     }
 })
 
+// returns records belonging to a patient
 app.get("/patient/record/:patientId", async (req, res) => {
     console.log('/patient/record METHOD:GET')
     try{
