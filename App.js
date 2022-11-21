@@ -142,6 +142,15 @@ app.post('/login',(req, res)=>{
 
 })
 
+//login get request
+app.get('/login', (req, res) => {
+    res.send({
+        "success" : "Success",
+        "message" : "User on login page"
+    })
+    
+});
+
 
 // post patient data method
 app.post("/patient",(req,res) =>{
