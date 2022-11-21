@@ -33,8 +33,8 @@ app.use(
     clientSessions({
       cookieName: "session",
       secret: "node-react-project",
-      duration: 30 * 60 * 1000,
-      activeDuration: 1000 * 60*10
+      duration: 30 * 60 * 2000,
+      activeDuration: 2000 * 60*10
     })
   );
 
