@@ -27,6 +27,15 @@ function containsOnlyNumbers(str) {
     return /^\d+$/.test(str);
 }
 
+const clientSessions = require("client-sessions");
+app.use(
+    clientSessions({
+      cookieName: "session",
+      secret: "node-react-project",
+      duration: 30 * 60 * 1000,
+      activeDuration: 1000 * 60*10
+    })
+  );
 
 
 //data models
@@ -40,7 +49,7 @@ mongodb.connect(process.env.DBCONN, { useNewUrlParser: true, useUnifiedTopology:
 
 //register post request
 app.post("/signup",(req,res)=>{
-    console.log('/signup METGOD: POST')
+    console.log('/signup METHOD: POST')
     var newSignup = new LoginregisterModel({
         username: req.body.username,
         nurseName: req.body.nurseName,
@@ -86,6 +95,53 @@ app.post("/signup",(req,res)=>{
     }
     
 })
+//login post request
+app.post('/login',(req, res)=>{
+    const username = req.body.username
+    const password = req.body.password
+
+    //validating the user
+    if(username == "" || username == undefined || username.length< 5){
+        res.send({
+            "success" : "false",
+            "message" : "Please enter a valid username"
+        })
+    }
+    if(password == "" || password == undefined || password.length< 5){
+        res.send({
+            "success" : "false",
+            "message" : "Please enter a valid password"
+        })
+    }
+    var checkedLogin = false
+    LoginregisterModel.findOne({username : username})
+    .exec()
+    .then((usr)=>{
+        if(!usr){
+            //if user is not found
+            res.send({
+                "success" : "false",
+                "message" : "User does not exist"
+            })
+        }else{
+            //user esists
+            if(password == usr.password){
+                checkedLogin = true
+                res.send({
+                    "success" : "Success",
+                    "message" : "User is logged in"
+                })
+            }else{
+                res.send({
+                    "success" : "false",
+                    "message" : "User and password does not match"
+                })
+            }
+        }
+    })
+
+})
+
 
 // post patient data method
 app.post("/patient",(req,res) =>{
