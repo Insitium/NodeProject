@@ -6,6 +6,7 @@ var http_port = process.env.PORT || 8080
 require("dotenv").config();
 const mongodb = require("mongoose")
 const cors = require('cors');
+const { connectDB, disconnectDB } = require('./database');
 
 var app = express();
 
@@ -45,7 +46,7 @@ const LoginregisterModel = require("./models/LoginRegisterModel")
 const { on } = require("events");
 
 //connecting to the db using the link in env file
-mongodb.connect(process.env.DBCONN, { useNewUrlParser: true, useUnifiedTopology: true})
+connectDB();
 
 //register post request
 app.post("/signup",(req,res)=>{
@@ -166,66 +167,69 @@ app.post("/patient",(req,res) =>{
         image: req.body.image
     });
     if(req.body.fullName == "" || req.body.fullName == undefined){
-        res.send({
+        res.status(400).send({
             "success" : "false",
             "message" : "fullName is required"
         })
     }
     if(!containsOnlyNumbers(req.body.age) || req.body.age == undefined){
-        return res.send({
+        return res.status(400).send({
             "success": "false",
             "message": "invalid age or age not given"
         })
     }
     if(req.body.address=="" || req.body.address == undefined){
-        return res.send({
+        return res.status(400).send({
             "success" : "false",
             "message" : "address is required"
         })
     }
     if(req.body.dob=="" || req.body.dob == undefined){
-        return res.send({
+        return res.status(400).send({
             "success" : "false",
             "message" : "dob is required"
         })
     }
 
     if(req.body.phoneNumber =="" || req.body.phoneNumber == undefined){  
-        return res.send({
+        return res.status(400).send({
             "success" : "false",
             "message" : "phonenumber is required"
         })
     }else{
         if(!containsOnlyNumbers(req.body.phoneNumber) || !((req.body.phoneNumber.length) == 10)){
-            return res.send({
+            return res.status(400).send({
                 "success" : "false",
                 "message" : "invalid phone number"
             }) 
         }    
     }
 
-    try{
-        newPatient.save();
-        return res.send({
-            "success": "true"
-        })
-    }catch(err){
-        console.log(err)
-        return res.send({
-            "success": "false",
-            "message": err
-        })
+    if(req.body.fullName != "" && containsOnlyNumbers(req.body.age) && req.body.address!=""
+        && req.body.dob!="" && req.body.phoneNumber !="" && req.body.phoneNumber.length == 10 && containsOnlyNumbers(req.body.phoneNumber)) {
+        try{
+            newPatient.save();
+            return res.status(200).send({
+                "success": "true",
+                "message": "Record added successfully"
+            })
+        }catch(err){
+            console.log(err)
+            return res.send({
+                "success": "false",
+                "message": err
+            })
+        }
     }
-    
 })
 
 // find patient by id
 app.get('/patient/:postId', async (req, res) => {
     try {
         const data = await patientModel.findById(req.params.postId);
-        res.send({ data});
+        res.status(200).send({ data});
     } catch (err) {
-        res.send({message: err });
+        res.status(404).send({message: err });
    
     }
 });
@@ -234,9 +238,9 @@ app.get('/patient/:postId', async (req, res) => {
 app.delete("/patient/:id", async (req, res) => { 
     try {
         const data = await patientModel.remove({ _id: req.params.id});
-        res.send({ data});
+        res.status(200).send({ data});
     } catch (err) {
-        res.send({message: err });
+        res.status(404).send({message: err });
    
     }
 })
@@ -258,9 +262,10 @@ app.get('/patients', (req, res) => {
     let posts = patientModel.find({}, function(err, posts){
         if(err){
             console.log(err);
+            res.status(404).send(err);
         }
         else {
-            res.send({posts});
+            res.status(200).send(posts)
         }
     });
 });
@@ -280,32 +285,34 @@ app.post("/record",(req,res)=>{
     });
 
     if(req.body.patientId == "" || req.body.patientId == undefined || req.body.bloodPressure == "" || req.body.bloodPressure == undefined || req.body.respirationRate == "" || req.body.respirationRate == undefined || req.body.bloodOxygen == "" || req.body.bloodOxygen == undefined){
-        res.send({
+        res.status(400).send({
             "success": "false",
             "message": "All the details needs to be filled"
         })
+    } else {
+        try{
+            newRecord.save();
+            return res.send({
+                "success": "true"
+            })
+        }catch(err){
+            console.log(err)
+            return res.send({
+                "success": "false",
+                "message": err
+            })
+        }
     }
-    try{
-        newRecord.save();
-        return res.send({
-            "success": "true"
-        })
-    }catch(err){
-        console.log(err)
-        return res.send({
-            "success": "false",
-            "message": err
-        })
-    }
+   
 })
 
 //get all records
 app.get('/records', async (req, res) => {
     try {
         const data = await RecordModel.find();
-        res.send({ data});
+        res.status(200).send({ data});
     } catch (err) {
-        res.send({message: err });
+        res.status(404).send({message: err });
    
     }
 });
@@ -315,9 +322,9 @@ app.get('/record/:postId', async (req, res) => {
     console.log('/record METHOD:GET')
     try {
         const data = await RecordModel.findById(req.params.postId);
-        res.send({ data});
+        res.status(200).send({ data});
     } catch (err) {
-        res.send({message: err });
+        res.status(404).send({message: err });
    
     }
 });
@@ -326,10 +333,9 @@ app.get('/record/:postId', async (req, res) => {
 app.delete("/record/:id", async (req, res) => { 
     try {
         const data = await RecordModel.remove({ _id: req.params.id});
-        res.send({ data});
+        res.status(200).send({ data});
     } catch (err) {
-        res.send({message: err });
-   
+        res.status(404).send({message: err });
     }
 })
 
@@ -337,3 +343,5 @@ app.delete("/record/:id", async (req, res) => {
 
 //app listen
 app.listen(http_port,onStartingServer)
+
+module.exports = { app };

@@ -19,7 +19,7 @@
   "version": "1.0.0",
   "main": "App.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "jest --watchAll --no-cache --detectOpenHandles"
   },
   "repository": {
     "type": "git",
@@ -31,5 +31,10 @@
   "bugs": {
     "url": "https://github.com/Insitium/NodeProject/issues"
   },
-  "homepage": "https://github.com/Insitium/NodeProject#readme"
+  "homepage": "https://github.com/Insitium/NodeProject#readme",
+  "devDependencies": {
+    "jest": "^29.3.1",
+    "mongodb-memory-server": "^8.10.1",
+    "supertest": "^6.3.1"
+  }
 }
