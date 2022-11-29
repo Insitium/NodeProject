@@ -7,6 +7,8 @@ require("dotenv").config();
 const mongodb = require("mongoose")
 const cors = require('cors');
 const { connectDB, disconnectDB } = require('./database');
+var jwt = require("jsonwebtoken");
+
 
 var app = express();
 
