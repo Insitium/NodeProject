@@ -3,11 +3,13 @@ const { MongoMemoryServer } = require('mongodb-memory-server');
 
 const connectDB = async () => {
   try {
+    console.log("connecting to db")
     const conn = await mongoose.connect(process.env.DBCONN, {
       useNewUrlParser: true,
       useUnifiedTopology: true
     });
   } catch (err) {
+    console.log("error connecting to db"+ err)
     console.log(err)
   }
 };
