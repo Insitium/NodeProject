@@ -15,7 +15,7 @@ var app = express();
 
 // set body parser
 app.use(parserBody.urlencoded({extended:false}));
-app.use(parserBody.json())
+app.use(parserBody.json({limit: '150mb'}))
 app.use(express.static("views"));
 app.use(express.static("public"))
 app.use(cors({origin: true, credentials: true}));
