@@ -103,6 +103,9 @@ app.post('/login',(req, res)=>{
     const username = req.body.username
     const password = req.body.password
 
+    const usern = {name:username}
+    
+    const accessToken = jwt.sign(usern,process.env.ACCESS_TOEN_SECRET)
     //validating the user
     if(username == "" || username == undefined || username.length< 5){
         res.send({
@@ -131,8 +134,7 @@ app.post('/login',(req, res)=>{
             if(password == usr.password){
                 checkedLogin = true
                 res.send({
-                    "success" : "Success",
-                    "message" : "User is logged in"
+                    accessToken:accessToken
                 })
             }else{
                 res.send({
@@ -154,9 +156,10 @@ app.get('/login', (req, res) => {
     
 });
 
+//json web tokens 
 
 // post patient data method
-app.post("/patient",(req,res) =>{
+app.post("/patient",authenticatetoken,(req,res) =>{
 
     console.log('/patient METHOD:POST')
     var newPatient = new patientModel({
@@ -226,7 +229,7 @@ app.post("/patient",(req,res) =>{
 })
 
 // find patient by id
-app.get('/patient/:postId', async (req, res) => {
+app.get('/patient/:postId',authenticatetoken, async (req, res) => {
     try {
         const data = await patientModel.findById(req.params.postId);
         res.status(200).send({ data});
@@ -237,7 +240,7 @@ app.get('/patient/:postId', async (req, res) => {
 });
 
 // delete patient by id
-app.delete("/patient/:id", async (req, res) => { 
+app.delete("/patient/:id",authenticatetoken, async (req, res) => { 
     try {
         const data = await patientModel.remove({ _id: req.params.id});
         res.status(200).send({ data});
@@ -248,7 +251,7 @@ app.delete("/patient/:id", async (req, res) => {
 })
 
 // returns records belonging to a patient
-app.get("/patient/record/:patientId", async (req, res) => {
+app.get("/patient/record/:patientId",authenticatetoken, async (req, res) => {
     console.log('/patient/record METHOD:GET')
     try{
         const data = await RecordModel.find({patient_id: req.params.patientId})
@@ -260,7 +263,7 @@ app.get("/patient/record/:patientId", async (req, res) => {
 })
 
 // get all patients
-app.get('/patients', (req, res) => {
+app.get('/patients',authenticatetoken, (req, res) => {
     let posts = patientModel.find({}, function(err, posts){
         if(err){
             console.log(err);
@@ -273,7 +276,7 @@ app.get('/patients', (req, res) => {
 });
 
 //post record data method
-app.post("/record",(req,res)=>{
+app.post("/record",authenticatetoken,(req,res)=>{
 
     console.log('/record METHOD:POST')
     let date = new Date() 
@@ -309,7 +312,7 @@ app.post("/record",(req,res)=>{
 })
 
 //get all records
-app.get('/records', async (req, res) => {
+app.get('/records',authenticatetoken, async (req, res) => {
     try {
         const data = await RecordModel.find();
         res.status(200).send({ data});
@@ -320,7 +323,7 @@ app.get('/records', async (req, res) => {
 });
 
 //get records by id
-app.get('/record/:postId', async (req, res) => {
+app.get('/record/:postId',authenticatetoken, async (req, res) => {
     console.log('/record METHOD:GET')
     try {
         const data = await RecordModel.findById(req.params.postId);
@@ -332,7 +335,7 @@ app.get('/record/:postId', async (req, res) => {
 });
 
 // delete record by id
-app.delete("/record/:id", async (req, res) => { 
+app.delete("/record/:id",authenticatetoken, async (req, res) => { 
     try {
         const data = await RecordModel.remove({ _id: req.params.id});
         res.status(200).send({ data});
@@ -341,7 +344,21 @@ app.delete("/record/:id", async (req, res) => {
     }
 })
 
-
+//authenticate function
+function authenticatetoken(req,res,next){
+    const authHeader = req.headers['authorization']
+    const token = authHeader && authHeader.split(' ')[1]
+    if(token == null){
+        res.send({"failure":"token is null"})
+    }
+    jwt.verify(token, process.env.ACCESS_TOEN_SECRET,(err, user)=>{
+        if(err){
+            return res.send({"failure":"token is invalod"})
+        }
+        req.user = user
+        next()
+    })
+}
 
 //app listen
 app.listen(http_port,onStartingServer)
